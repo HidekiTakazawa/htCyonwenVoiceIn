@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐼 ht自由说中文 - Speak Chinese Freely!</title>
+  <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+
+  <script src="https://unpkg.com/pinyin-pro"></script>
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 1em;
+      background-size: contain;
+      background-position: center;
+      background-attachment: fixed;
+      position: relative;
+      color: #333;
+      margin: 0;
+      background-repeat: no-repeat;
+    }
+
+    /* 背景画像を薄くするためのオーバーレイ */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.6);
+      /* 白色の半透明レイヤーの透明度を調整 */
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 2em;
+      background-color: transparent;
+      /* パンダ画像を透過させるため */
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      position: relative;
+      /* ::after擬似要素の基準位置 */
+      z-index: 1;
+      /* コンテンツが::afterの上に表示されるように */
+    }
+
+    /* コンテナ内部に薄いパンダ画像を表示するためのオーバーレイ */
+    .container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.6);
+      /* 白色の半透明レイヤーの透明度を調整 */
+      z-index: -1;
+      /* コンテナのコンテンツの背面に配置 */
+      border-radius: 15px;
+      /* コンテナの角丸に合わせる */
+    }
+
+    h2,
+    h3 {
+      font-size: 1.8em;
+      text-align: center;
+    }
+
+    h2 {
+      color: rgb(0, 128, 122);
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+    }
+
+    h3 {
+      margin-top: 1em;
+      font-size: 1.2em;
+      color: #555;
+      font-weight: 400;
+    }
+
+    .controls {
+      text-align: center;
+      margin-bottom: 1.5em;
+    }
+
+    button {
+      font-size: 24px;
+      padding: 10px 20px;
+      margin-right: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .result-item .chinese {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .result-item .pinyin {
+      font-size: 18px;
+      color: #555;
+      margin: 5px 0;
+    }
+
+    #show_progress {
+      width: 90%;
+      font-size: 18px;
+      color: #888;
+    }
+
+    #voiceInButton {
+      background-color: #28a745;
+      color: white;
+    }
+
+    #voiceInButton:hover:not(:disabled) {
+      background-color: #218838;
+      transform: translateY(-2px);
+    }
+
+
+
+    #copy_btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      vertical-align: middle;
+      box-shadow: none;
+    }
+
+    #copy_btn svg {
+      width: 32px;
+      height: 32px;
+      fill: #6c757d;
+      transition: fill 0.2s ease;
+    }
+
+    #copy_btn:hover svg {
+      fill: #007bff;
+    }
+
+    #copy_message {
+      color: #28a745;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+   
+
+
+    .header-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-container h2 {
+      margin: 0.5em 0;
+    }
+
+    .pinyinDisplay {
+      margin-top: 1em;
+      display: flex;
+
+    }
+
+    #hanyu {
+      width: 100%;
+      font-size: 16px;
+      padding: 0.5em;
+    }
+
+
+
+    /* IDセレクタの方が優先度が高いため、#をつけて優先度を上げます */
+    #voiceInButton.voiceRecording {
+      background-color: red;
+      color: white !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header-container">
+      <h2>自由说中文</h2>
+      <button id="copy_btn" title="履歴をクリップボードにコピーする">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+        </svg>
+      </button>
+      <span id="copy_message"></span>
+    </div>
+    <h3>☞練習したい中国語文字列を入力してエンターキーを押してください</h3>
+    <h3>☞入力した中国語が発音され、ピンインも表示されます。</h3>
+    <h3>☞音声入力を押して発音すると簡体字・ピンインに変換します</h3>
+    <h3>☞入力した中国語と音声入力した中国語を比較しあなたの発音の力を厳正に評価します。</h3>
+    <div>
+      <label for="hanyu">中国語入力</label>
+      <input id="hanyu" maxlength="30" placeholder="音声入力を練習したい中国語文字列" />
+    </div>
+    <div class="pinyinDisplay">
+      <p>ピンイン：</p>
+      <p id="targetPinyin"></p>
+    </div>
+
+    <div>
+      <button id="voiceOutButton">聞く</button>
+      <button id="voiceInButton">音声入力</button>
+      <button id="clearButton">クリア</button>
+    </div>
+    <div id="resultArea" style="display: none">
+      <h2>判定結果</h2>
+      <p>あなたの成績は <strong id="score"></strong> です。</p>
+      <p>判定: <strong id="judgment"></strong></p>
+      <p>あなたの中国語は <strong id="userHanyu"></strong></p>
+      <p>ピンイン: <strong id="userPinyin"></strong></p>
+    </div>
+
+  </div>
+  <script>
+    // --- ★デザイン変更：背景画像をランダムに設定 ---
+    document.addEventListener('DOMContentLoaded', function () {
+      const pandas = [
+        'images/パンダ1.png',
+        'images/パンダ2.png',
+        'images/パンダ3.png',
+        'images/パンダ4.png',
+        'images/パンダ5.png'
+      ];
+      const randomIndex = Math.floor(Math.random() * pandas.length);
+      document.body.style.backgroundImage = `url('${pandas[randomIndex]}')`;
+    });
+    const hanyu = document.getElementById("hanyu");
+    const targetPinyin = document.getElementById("targetPinyin");
+    const voiceOutButton = document.getElementById("voiceOutButton");
+    const voiceInButton = document.getElementById("voiceInButton");
+    const clearButton = document.getElementById("clearButton");
+    const score = document.getElementById("score");
+    const judgment = document.getElementById("judgment");
+    const userHanyu = document.getElementById("userHanyu");
+    const userPinyin = document.getElementById("userPinyin");
+    const resultArea = document.getElementById("resultArea");
+    const copyBtn = document.getElementById('copy_btn');
+    const copyMessage = document.getElementById('copy_message');
+    let historyRecords = [];
+    let recognition = null;
+    let isRecording = false;
+    let isPlaying = false;
+    // ★追加：2つの配列（ピンインの配列）を比較し、類似度を0〜100点で計算するアルゴリズム（レーベンシュタイン距離）
+    const calculateSimilarity = (arr1, arr2) => {
+      if (arr1.length === 0 && arr2.length === 0) return 100;
+      if (arr1.length === 0 || arr2.length === 0) return 0;
+
+      const matrix = Array(arr2.length + 1).fill(null).map(() => Array(arr1.length + 1).fill(null));
+
+      for (let i = 0; i <= arr1.length; i++) matrix[0][i] = i;
+      for (let j = 0; j <= arr2.length; j++) matrix[j][0] = j;
+
+      for (let j = 1; j <= arr2.length; j++) {
+        for (let i = 1; i <= arr1.length; i++) {
+          const indicator = arr1[i - 1] === arr2[j - 1] ? 0 : 1;
+          matrix[j][i] = Math.min(
+            matrix[j][i - 1] + 1, // 挿入
+            matrix[j - 1][i] + 1, // 削除
+            matrix[j - 1][i - 1] + indicator // 置換
+          );
+        }
+      }
+      const distance = matrix[arr2.length][arr1.length];
+      const maxLength = Math.max(arr1.length, arr2.length);
+      const similarity = ((maxLength - distance) / maxLength) * 100;
+      return Math.round(similarity);
+    };
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.interimResults = false;
+      // 音声認識が終了した際に一括でUIをリセットするようにします
+      recognition.onend = () => {
+        isRecording = false;
+        voiceInButton.classList.remove('voiceRecording');
+        voiceInButton.textContent = "音声入力";
+      };
+      recognition.onerror = (e) => {
+        alert("マイクエラー: " + e.error + "\n(※iPhone/iPadの場合、設定からマイクを許可してください)");
+        isRecording = false;
+        recognition = null;
+      };
+    } else {
+      alert("お使いのブラウザは音声認識に対応していません。");
+    }
+
+
+    hanyu.addEventListener('keydown', (event) => {
+      // IME入力中（変換中）は処理をスキップする
+      if (event.isComposing || event.key !== 'Enter') {
+        return;
+      }
+      // ユーザーの表示用ピンイン
+      const targetPinyinDisplay = pinyinPro.pinyin(hanyu.value, { toneType: 'symbol' });
+      // --- ここに実行したい処理を記述 ---
+
+      playAudio(hanyu.value.trim());
+      targetPinyin.textContent = targetPinyinDisplay;
+
+
+      // ---------------------------------
+    });
+
+    voiceOutButton.addEventListener('click', () => {
+      playAudio(hanyu.value.trim());
+    });
+
+    voiceInButton.addEventListener('click', () => {
+      toggleMic();
+    });
+
+    // --- クリップボードへのコピー機能 ---
+    copyBtn.addEventListener('click', () => {
+      if (historyRecords.length === 0) {
+        alert('コピーする履歴がありません。音声入力を練習してからコピーしてください。');
+        return;
+      }
+
+      let historyText = '';
+      historyRecords.forEach((record, index) => {
+        historyText += `【記録 ${index + 1} / ${record.timestamp}】\n`;
+        historyText += `①入力中国語: ${record.inputHanyu}\n`;
+        historyText += `②入力ピンイン: ${record.inputPinyin}\n`;
+        historyText += `③音声入力内容: ${record.userHanyu}\n`;
+        historyText += `④音声ピンイン: ${record.userPinyin}\n`;
+        historyText += `⑤スコア: ${record.score}点\n`;
+        historyText += `⑥判定: ${record.judgment}\n`;
+        historyText += `------------------------------------\n\n`;
+      });
+
+      navigator.clipboard.writeText(historyText.trim()).then(() => {
+        copyMessage.textContent = 'コピー完了！';
+        setTimeout(() => { copyMessage.textContent = ''; }, 2000);
+      }).catch(err => {
+        console.error('コピーに失敗しました:', err);
+      });
+    });
+
+    clearButton.addEventListener('click', () => {
+      hanyu.value = "";
+      targetPinyin.textContent = "";
+      resultArea.style.display = "none";
+
+    });
+
+    const playAudio = (text) => {
+      if (!text || isPlaying) return;
+      if (!window.speechSynthesis) {
+        alert("お使いのブラウザは音声読み上げに対応していません。");
+        return;
+      }
+      isPlaying = true;
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 0.9;
+      utterance.onend = () => { isPlaying = false; };
+      utterance.onerror = (e) => {
+        console.error("音声読み上げエラー:", e);
+        isPlaying = false;
+      };
+      window.speechSynthesis.speak(utterance);
+    };
+
+    const toggleMic = () => {
+      if (hanyu.value.trim() === "") {
+        alert("中国語を入力してください。");
+        return;
+      }
+      if (isRecording) {
+        recognition.stop();
+        return;
+      }
+      if (!recognition) {
+        alert("お使いのブラウザは音声認識に対応していません。");
+        return;
+      }
+      isRecording = true;
+      voiceInButton.classList.add('voiceRecording');
+      voiceInButton.textContent = "レコード中";
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        evaluate(hanyu.value, transcript);
+      };
+      recognition.start();
+    };
+
+    const evaluate = async (hanyuText, transcript) => {
+
+      try {
+        // ★変更：記号やスペースを完全に除去して純粋な文字だけにする
+        const normalizeText = (hanyuText) => {
+          if (!hanyuText) return "";
+          return hanyuText.replace(/[\s　，。？！、：；“”‘’（）\(\)\[\]【】,\.\?!:;"']/g, '');
+        };
+
+        const targetClean = normalizeText(hanyuText);
+        const userClean = normalizeText(transcript);
+
+        // ユーザーの表示用ピンイン
+        const userPinyinDisplay = pinyinPro.pinyin(transcript, { toneType: 'symbol' });
+
+        let resultScore = 0;
+        let feedback = "";
+
+        // 結果表示エリアを表示
+        document.getElementById("resultArea").style.display = "block";
+        userHanyu.textContent = transcript;
+        userPinyin.textContent = userPinyinDisplay;
+
+        // 1. 簡体字が完全一致するかチェック
+        if (targetClean === userClean) {
+          resultScore = 100;
+          feedback = "完璧です！正しく発音されました。";
+        } else {
+          // 2. 一致しない場合、ピンインを配列化して比較
+          // 例: "你好" -> ["nǐ", "hǎo"]
+          const targetPinyinArr = pinyinPro.pinyin(targetClean, { type: 'array', toneType: 'symbol' });
+          const userPinyinArr = pinyinPro.pinyin(userClean, { type: 'array', toneType: 'symbol' });
+
+          // レーベンシュタイン距離アルゴリズムで類似度を計算
+          resultScore = calculateSimilarity(targetPinyinArr, userPinyinArr);
+
+          // スコアに応じたフィードバック
+          if (resultScore === 100) {
+            feedback = "完璧です！正しく発音されました。";
+          } else if (resultScore >= 80) {
+            feedback = "とても良いです！あと少し！";
+          } else if (resultScore >= 50) {
+            feedback = "惜しいです。ピンインを確認してもう一度！";
+          } else {
+            feedback = "もっと発音の練習をしましょう。";
+          }
+        }
+
+
+        score.textContent = resultScore + "点";
+        judgment.textContent = feedback;
+
+        // --- 履歴を配列に保存 ---
+        historyRecords.push({
+          timestamp: new Date().toLocaleString(),
+          inputHanyu: hanyuText,
+          inputPinyin: pinyinPro.pinyin(hanyuText, { toneType: 'symbol' }),
+          userHanyu: transcript,
+          userPinyin: userPinyinDisplay,
+          score: resultScore,
+          judgment: feedback
+        });
+
+      } catch (err) {
+        alert("評価エラー:\n" + err.message);
+      }
+    };
+  </script>
+
+
+
+
+</body>
+
+</html>
