@@ -173,11 +173,14 @@
 
 
 
-    /* IDセレクタの方が優先度が高いため、#をつけて優先度を上げます */
-    #voiceInButton.voiceRecording {
-      background-color: red;
-      color: white !important;
-    }
+   /* 修正後（こちらに差し替えてください） */
+#voiceInButton.voiceRecording {
+  background-color: red !important;
+  color: white !important;
+  -webkit-appearance: none; /* iOSのデフォルトスタイルをリセット */
+  appearance: none;         /* 標準プロパティ（これを追加） */
+  opacity: 1 !important;
+}
   </style>
 </head>
 
@@ -194,8 +197,10 @@
       <span id="copy_message"></span>
     </div>
     <h5>☞練習したい中国語文字列を入力してエンターキーを押してください</h5>
+    <h5>☞音声入力ボタンをクリックしてから、音声を入力してください。</h5>
+    <h5>☞話し終わったら、もう一度「レコード中」ボタンを押して録音を終了させます。</h5>
     
-    <h5>☞入力した中国語と音声入力した中国語を比較しあなたの発音の力を厳正に評価します。</h5>
+    
     <div>
       <label for="hanyu">中国語入力</label>
       <input id="hanyu" maxlength="30" placeholder="音声入力を練習したい中国語文字列" />
@@ -279,6 +284,7 @@
       recognition = new SpeechRecognition();
       recognition.lang = 'zh-CN';
       recognition.interimResults = false;
+      recognition.continuous = true; // ★この1行を追加（連続認識モードをON）
       // 音声認識が終了した際に一括でUIをリセットするようにします
       recognition.onend = () => {
         isRecording = false;
@@ -389,8 +395,13 @@
       isRecording = true;
       voiceInButton.classList.add('voiceRecording');
       voiceInButton.textContent = "レコード中";
+       // 修正後（こちらに差し替えてください）
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+        let transcript = '';
+        // 分割して認識された文章をすべて繋ぎ合わせる
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
         evaluate(hanyu.value, transcript);
       };
       recognition.start();
